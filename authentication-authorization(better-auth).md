@@ -1,0 +1,166 @@
+# Better Auth Setup with Prisma & Express
+
+## 1. Installation & Setup
+
+Follow the official Better Auth documentation for installation and setup:
+
+[Better Auth Documentation](https://better-auth.com/docs/installation)
+
+## 2. Environment Variables
+
+Generate a Better Auth secret and configure the Better Auth URL in your `.env` file.
+
+```env
+BETTER_AUTH_SECRET="your-secret-key"
+BETTER_AUTH_URL="http://localhost:5000"
+```
+
+## 3. Create Auth Configuration
+
+Create an `auth.ts` file inside the `src/lib` folder.
+
+Configure Better Auth with Prisma as the database adapter.
+
+**`src/lib/auth.ts`**
+
+```ts
+import { betterAuth } from "better-auth";
+import { prismaAdapter } from "better-auth/adapters/prisma";
+import { prisma } from "@/lib/prisma";
+
+export const auth = betterAuth({
+  database: prismaAdapter(prisma, {
+    provider: "postgresql",
+  }),
+});
+```
+
+## 4. Generate Authentication Tables
+
+Generate the required Better Auth database models using the Better Auth CLI.
+
+```bash
+bunx @better-auth/cli generate
+```
+
+This generates the required Prisma models:
+
+- User
+- Session
+- Account
+- Verification
+
+Check the generated models in your `schema.prisma` file.
+
+## 5. Run Database Migration
+
+Apply the generated models to your PostgreSQL database.
+
+```bash
+bunx prisma migrate dev --name init
+```
+
+This creates the required authentication tables in your database.
+
+## 6. Mount Better Auth Handler in Express
+
+Mount the Better Auth handler in your Express application.
+
+**`src/app.ts`**
+
+```ts
+import { toNodeHandler } from "better-auth/node";
+import { auth } from "./lib/auth";
+
+app.all("/api/auth/*", toNodeHandler(auth));
+```
+
+Make sure to mount the Better Auth handler before your other routes and avoid placing `express.json()` before it.
+
+## 7. Authentication System
+
+Now the basic Better Auth setup is complete.
+
+Next, implement the authentication system.
+
+### Email & Password Authentication
+
+Start with Email & Password authentication.
+
+Official documentation:
+
+[Email & Password Authentication](https://better-auth.com/docs/authentication/email-password)
+
+## 8. Enable Email & Password Authentication
+
+Enable Email & Password authentication in your `auth.ts` file.
+
+**`src/lib/auth.ts`**
+
+```ts
+export const auth = betterAuth({
+  database: prismaAdapter(prisma, {
+    provider: "postgresql",
+  }),
+
+  emailAndPassword: {
+    enabled: true,
+  },
+});
+```
+
+## 9. Generate & Migrate Database
+
+After updating the authentication configuration:
+
+**Step 1:** Stop the development server.
+
+**Step 2:** Generate the required Prisma models.
+
+```bash
+bunx auth@latest generate
+```
+
+**Step 3:** Run database migration.
+
+```bash
+bunx prisma migrate dev --name add-auth
+```
+
+**Step 4:** Start the development server again.
+
+```bash
+bun run dev
+```
+
+## 10. Sign Up with Email & Password
+
+Better Auth provides a server-side API to register users using email and password.
+
+**Endpoint:** `POST /api/auth/sign-up/email`
+
+### Server-side Usage
+
+```ts
+const data = await auth.api.signUpEmail({
+  body: {
+    name: "John Doe",
+    email: "john.doe@example.com",
+    password: "password1234",
+    image: "https://example.com/image.png",
+    callbackURL: "https://example.com/callback",
+  },
+});
+```
+
+### Parameters
+
+- `name`: Required. User's name.
+- `email`: Required. User's email address.
+- `password`: Required. Password (minimum 8 and maximum 128 characters by default).
+- `image`: Optional. User's profile image.
+- `callbackURL`: Optional. Redirect URL after successful signup.
+
+Official documentation:
+
+[Email & Password Authentication](https://better-auth.com/docs/authentication/email-password)
