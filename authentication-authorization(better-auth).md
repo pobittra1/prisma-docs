@@ -164,3 +164,110 @@ const data = await auth.api.signUpEmail({
 Official documentation:
 
 [Email & Password Authentication](https://better-auth.com/docs/authentication/email-password)
+
+## 11. Add Additional Fields to User
+
+To add custom fields to the Better Auth user table, use `additionalFields` in `auth.ts`.
+
+### Step 1: Configure Additional Fields
+
+```ts
+user: {
+  additionalFields: {
+    phone: {
+      type: "string",
+      required: false,
+    },
+    address: {
+      type: "string",
+      required: false,
+    },
+    role: {
+      type: ["USER", "ADMIN"],
+      defaultValue: "USER",
+      input: false,
+    },
+  },
+},
+```
+
+### Step 2: Generate & Migrate
+
+1. Stop the development server.
+2. Generate Prisma schema:
+
+```bash
+bunx auth@latest generate
+```
+
+3. Run migration:
+
+```bash
+bunx prisma migrate dev --name add-user-fields
+```
+
+4. Start the server again.
+
+### Step 3: Signup with Additional Fields
+
+```ts
+const data = await auth.api.signUpEmail({
+  body: {
+    name: "John Doe",
+    email: "john.doe@example.com",
+    password: "password1234",
+    phone: "01700000000",
+    address: "Dhaka, Bangladesh",
+  },
+});
+```
+
+**Note:** Use `input: false` for protected fields like `role` to prevent users from assigning themselves admin privileges.
+
+Documentation: [Better Auth – Additional Fields](https://better-auth.com/docs/concepts/database#extending-core-schema)
+
+## 12. Configure CORS in Express
+
+Install CORS:
+
+```bash
+bun add cors
+bun add -d @types/cors
+```
+
+### Step 1: Configure CORS
+
+Add CORS configuration in `app.ts`.
+
+```ts
+import cors from "cors";
+
+app.use(
+  cors({
+    origin: ["http://localhost:4000"],
+    credentials: true,
+  }),
+);
+```
+
+### Step 2: Configure Better Auth
+
+Make sure `trustedOrigins` includes your frontend URL in `auth.ts`.
+
+```ts
+export const auth = betterAuth({
+  trustedOrigins: ["http://localhost:4000"],
+
+  // Other configurations
+});
+```
+
+**Important:**
+
+- `origin`: Allows requests from your frontend.
+- `credentials: true`: Allows cookies and credentials.
+- `trustedOrigins`: Allows Better Auth to trust your frontend origin.
+
+**Note:** Configure CORS before your application routes and mount the Better Auth handler appropriately.
+
+Documentation: [Better Auth – CORS](https://better-auth.com/docs/integrations/express)
