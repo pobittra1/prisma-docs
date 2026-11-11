@@ -271,3 +271,94 @@ export const auth = betterAuth({
 **Note:** Configure CORS before your application routes and mount the Better Auth handler appropriately.
 
 Documentation: [Better Auth – CORS](https://better-auth.com/docs/integrations/express)
+
+## 13. Email Verification Using Nodemailer
+
+### Step 1: Install Nodemailer
+
+```bash
+bun add nodemailer
+bun add -d @types/nodemailer
+```
+
+### Step 2: Configure SMTP
+
+Add email credentials to `.env`.
+
+```env
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT=587
+SMTP_USER="your-email@gmail.com"
+SMTP_PASS="your-app-password"
+```
+
+### Step 3: Create Email Service
+
+Create `email.ts` inside the `lib` folder.
+
+**`src/lib/email.ts`**
+
+```ts
+import nodemailer from "nodemailer";
+
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT),
+  secure: false,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+});
+
+export const sendEmail = async (to: string, subject: string, text: string) => {
+  await transporter.sendMail({
+    from: process.env.SMTP_USER,
+    to,
+    subject,
+    text,
+  });
+};
+```
+
+### Step 4: Configure Email Verification
+
+Add `emailVerification` inside `auth.ts`.
+
+**`src/lib/auth.ts`**
+
+```ts
+import { sendEmail } from "./email";
+
+export const auth = betterAuth({
+  // Other configurations
+
+  emailVerification: {
+    sendOnSignUp: true,
+
+    async sendVerificationEmail({ user, url }) {
+      await sendEmail(
+        user.email,
+        "Verify Your Email",
+        `Click here to verify your email: ${url}`,
+      );
+    },
+  },
+
+  emailAndPassword: {
+    enabled: true,
+    requireEmailVerification: true,
+  },
+});
+```
+
+### Step 5: Test Email Verification
+
+1. Register using an email and password.
+2. Check your email inbox.
+3. Click the verification link.
+4. Your email will be verified.
+
+**Note:** For Gmail, use a Google App Password instead of your regular Gmail password.
+
+Documentation: [Better Auth – Email Verification](https://better-auth.com/docs/concepts/email)
