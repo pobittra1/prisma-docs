@@ -362,3 +362,77 @@ export const auth = betterAuth({
 **Note:** For Gmail, use a Google App Password instead of your regular Gmail password.
 
 Documentation: [Better Auth – Email Verification](https://better-auth.com/docs/concepts/email)
+
+## 14. Google Social Sign In & Sign Up
+
+### Step 1: Get Google Credentials
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/).
+2. Create a project.
+3. Go to **APIs & Services → Credentials**.
+4. Create an OAuth Client ID.
+5. Select **Web Application**.
+6. Add Authorized Redirect URI:
+
+```text
+http://localhost:3000/api/auth/callback/google
+```
+
+7. Copy Client ID and Client Secret.
+
+### Step 2: Configure Environment Variables
+
+Add these to `.env`.
+
+```env
+GOOGLE_CLIENT_ID="your-google-client-id"
+GOOGLE_CLIENT_SECRET="your-google-client-secret"
+```
+
+### Step 3: Configure Google Provider
+
+Add `socialProviders` inside `auth.ts`.
+
+**`src/lib/auth.ts`**
+
+```ts
+export const auth = betterAuth({
+  database: prismaAdapter(prisma, {
+    provider: "postgresql",
+  }),
+
+  socialProviders: {
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    },
+  },
+
+  // Other configurations
+});
+```
+
+### Step 4: Restart Server
+
+```bash
+bun run dev
+```
+
+No additional Prisma migration is required for Google login because Better Auth uses the existing User, Account and Session models.
+
+### Step 5: Frontend Integration
+
+Frontend needs to:
+
+- Install Better Auth client.
+- Create `auth-client.ts`.
+- Use `signIn.social({ provider: "google" })`.
+- Add a Google Sign In button.
+
+**Note:**
+
+- First-time Google sign-in automatically creates a user account.
+- Existing linked Google accounts can sign in directly.
+- Google OAuth callback is handled by the Better Auth backend.
+
+Documentation: [Better Auth – Google Authentication](https://better-auth.com/docs/authentication/google)
